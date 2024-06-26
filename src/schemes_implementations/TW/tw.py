@@ -1,7 +1,5 @@
-
-
-from ..polynomials import *
-from ..linear_algebra import find_random_solution_linear_system, random_vector
+from ..helpers.polynomials import *
+from ..helpers.linear_algebra import find_random_solution_linear_system, random_vector
 from sage.structure.sequence import Sequence
 from sage.matrix.constructor import matrix
 from sage.matrix.special import identity_matrix, block_matrix
@@ -20,7 +18,7 @@ def replace_column(S, j, vec):
 
 
 def get_columns(S):
-    m,n = S.dimensions()
+    m, n = S.dimensions()
     return [S.column(i) for i in range(n)]
 
 
@@ -59,6 +57,7 @@ def get_coefficient_matrix_with_vars(seq, variables):
 
 
 #################### Functions to test ###########################
+
 
 def test_step2_polys_in_correct_shape(Seq_tw_after_substitution):
     m = len(Seq_tw_after_substitution)
@@ -156,7 +155,9 @@ def find_and_replace_column_of_S(n, m, a, col_idx, S, Matrices_A):
         # We add the lure polynomial to guerantee that all the linear monomials appear in the coeeficient matrix
         Eqs_with_lure = Eqs + [lure_poly]
         Coef_matrix_lure, vec_mon = Sequence(Eqs_with_lure).coefficients_monomials()
-        Coef_matrix = Coef_matrix_lure[0:-1, :]  # We remove the last column since it correspond to the lure_poly
+        Coef_matrix = Coef_matrix_lure[
+            0:-1, :
+        ]  # We remove the last column since it correspond to the lure_poly
         # Now we solve the system of the s_i
         A = Coef_matrix[:, :-1].dense_matrix()  # Columns of NONcostant terms
         b = Coef_matrix[:, -1].dense_matrix()  # Column of costant term
@@ -190,6 +191,7 @@ def extract_linear_polynomials_L(f, m):
         L.append(l)
     return L
 
+
 ####################Main Functions #############
 
 
@@ -204,9 +206,9 @@ def TW_step1(Seq):
     R = Seq[0].parent()
     n = R.ngens()
     Fq = R.base_ring()
-    assert (n > m)
+    assert n > m
     a = floor(n / m) - 1
-    RS = PolynomialRing(Fq, 's', (n - m) * m)
+    RS = PolynomialRing(Fq, "s", (n - m) * m)
     S0 = matrix(RS, m, n - m, RS.gens()).transpose()
     I_m = identity_matrix(Fq, m, m)
     I_n_m = identity_matrix(Fq, n - m, n - m)
@@ -227,14 +229,14 @@ def TW_step1(Seq):
 
 def TW_step2(Seq_tw):
     """
-        Input: -A sequence of polynomials Seq_tw of m polynomials in n variables.
+    Input: -A sequence of polynomials Seq_tw of m polynomials in n variables.
 
-        If every polynomial if written as
+    If every polynomial if written as
 
-                f_k = Q_k(x_1, ..., x_m) + \sum_{1<= i <= m} x_i L_{k,i}(x_{m+1}, ..., x_n) + H_k( L(x_{m+1}, ..., x_n).
-        This step takes the find a solution (a_{m+1},..., a_n) of the system L_{k,i}(x_{m+1}, ..., x_n) = 0 for k=1,..., a and i=1,...,m
+            f_k = Q_k(x_1, ..., x_m) + \sum_{1<= i <= m} x_i L_{k,i}(x_{m+1}, ..., x_n) + H_k( L(x_{m+1}, ..., x_n).
+    This step takes the find a solution (a_{m+1},..., a_n) of the system L_{k,i}(x_{m+1}, ..., x_n) = 0 for k=1,..., a and i=1,...,m
 
-        Output: [f(x_1, ..., x_m,a_{m+1},..., a_n) for f in Seq_tw]
+    Output: [f(x_1, ..., x_m,a_{m+1},..., a_n) for f in Seq_tw]
 
     """
     R = Seq_tw[0].parent()
@@ -252,17 +254,23 @@ def TW_step2(Seq_tw):
         L_f = extract_linear_polynomials_L(f, m)
         L.extend(L_f)
     var_s = [R.gen(j) for j in range(m, n)]
-    Coef_matrix, vec_var = get_coefficient_matrix_with_vars(L, var_s + [1])  # Coefficient matrix
+    Coef_matrix, vec_var = get_coefficient_matrix_with_vars(
+        L, var_s + [1]
+    )  # Coefficient matrix
     A = Coef_matrix[:, :-1].dense_matrix()  # Columns of NONcostant terms
     b = Coef_matrix[:, -1].dense_matrix()  # Column of costant term
-    solution_vector_of_L_polys = find_random_solution_linear_system(A,
-                                                                    -b)  # Solution of the system L_1 = L_2 = ....=L_* = 0
-    if solution_vector_of_L_polys is None:  # No solution to the system  L_1 = L_2 = ....=L_* = 0 exists.
+    solution_vector_of_L_polys = find_random_solution_linear_system(
+        A, -b
+    )  # Solution of the system L_1 = L_2 = ....=L_* = 0
+    if (
+        solution_vector_of_L_polys is None
+    ):  # No solution to the system  L_1 = L_2 = ....=L_* = 0 exists.
         return None, None
     solution_as_list = list(solution_vector_of_L_polys.transpose()[0])
     specialized_values = dict(zip(var_s, solution_as_list))
-    Seq_tw_after_substitution = [f.substitute(specialized_values) for f in
-                                 Seq_tw]  # Substitute the polys in the found solution
+    Seq_tw_after_substitution = [
+        f.substitute(specialized_values) for f in Seq_tw
+    ]  # Substitute the polys in the found solution
     Seq_tw_after_substitution = [R_restricted(f) for f in Seq_tw_after_substitution]
     return Seq_tw_after_substitution, specialized_values
 
@@ -277,25 +285,27 @@ def TW_step3(Seq_tw_after_substitution, use_magma=False):
     sol_found = False
     q = len(Fq)
     exponent = int(log2(q)) - 1
-    power = 2  **  exponent
+    power = 2**exponent
     # print("power", power)
     # Extract Linear polynomials
     linear_polys = []
     for k in range(a):
         f = Seq_tw_after_substitution[k]
-        l = f.constant_coefficient()  **  power
+        l = f.constant_coefficient() ** power
         for i in range(m):
-            coef = f.monomial_coefficient(R_restricted.gen(i)  **  2)
-            l += coef  **  power * R_restricted.gen(i)
+            coef = f.monomial_coefficient(R_restricted.gen(i) ** 2)
+            l += coef**power * R_restricted.gen(i)
         linear_polys.append(l)
         print(linear_polys)
     final_polys = linear_polys + Seq_tw_after_substitution[a:]
-    assert (len(final_polys) == m)
+    assert len(final_polys) == m
     var_x = R_restricted.gens()
-    I = R_restricted.ideal(final_polys + [R_restricted.gen(i)  **  q - R_restricted.gen(i) for i in range(m)])
+    I = R_restricted.ideal(
+        final_polys + [R_restricted.gen(i) ** q - R_restricted.gen(i) for i in range(m)]
+    )
     #    I == R_restricted.ideal()
     if use_magma:
-        B = I.groebner_basis('magma', prot=False)
+        B = I.groebner_basis("magma", prot=False)
     else:
         B = I.groebner_basis()
     dim_I = R_restricted.ideal(B).dimension()
@@ -368,3 +378,4 @@ def tw_strategy(Seq, max_iter_num=3, test=False, verbose=True, use_magma=False):
     if verbose:
         print("No solution found!")
     return None
+
